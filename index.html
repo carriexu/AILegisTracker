@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Legislation Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.1.2/svg.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            height: 100%;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #6C63FF;
+        }
+        nav ul {
+            list-style-type: none;
+            display: flex;
+            gap: 20px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: #3F3D56;
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #6C63FF;
+        }
+        #map {
+            width: 100%;
+            height: 70vh;
+            background-color: #f0f0f0;
+            margin: 20px 0;
+        }
+        .country {
+            fill: #ccc;
+            stroke: #fff;
+            stroke-width: 0.5;
+            transition: fill 0.3s;
+        }
+        .country:hover {
+            fill: #6C63FF;
+            cursor: pointer;
+        }
+        .selected {
+            fill: #3F3D56;
+        }
+        #info {
+            padding: 20px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+        .legislation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .legislation-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">AI LegisTrack</div>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#map">Map</a></li>
+                    <li><a href="#legislation">Legislation</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="home">
+            <h1>Global AI Legislation Tracker</h1>
+            <p>Stay informed about AI policies and regulations worldwide</p>
+        </section>
+
+        <section id="map">
+            <h2>Interactive World Map</h2>
+            <div id="map-container"></div>
+            <div id="info">Select a country to see AI legislation information.</div>
+        </section>
+
+        <section id="legislation">
+            <h2>Recent Legislation</h2>
+            <div class="legislation-grid" id="legislation-grid">
+                <!-- Legislation cards will be added here dynamically -->
+            </div>
+        </section>
+
+        <section id="about">
+            <h2>About AI LegisTrack</h2>
+            <p>AI LegisTrack is a comprehensive platform for tracking and analyzing AI legislation across the globe.</p>
+        </section>
+    </main>
+
+    <script>
+        // Initialize SVG.js
+        const draw = SVG().addTo('#map-container').size('100%', '100%');
+        
+        // Load the world map SVG
+        fetch('world-map.svg')
+            .then(response => response.text())
+            .then(svgContent => {
+                // Parse the SVG content
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+                
+                // Extract paths from the SVG
+                const paths = svgDoc.querySelectorAll('path');
+                
+                paths.forEach(path => {
+                    // Create a new path in our SVG.js drawing
+                    const country = draw.path(path.getAttribute('d'))
+                        .addClass('country')
+                        .attr('id', path.id);
+
+                    // Add click event listener
+                    country.click(function() {
+                        // Remove 'selected' class from all countries
+                        draw.find('.country').removeClass('selected');
+                        // Add 'selected' class to clicked country
+                        this.addClass('selected');
+                        // Update info div
+                        document.getElementById('info').textContent = `Selected country: ${this.attr('id')}`;
+                        // Here you would typically fetch and display legislation for the selected country
+                        fetchLegislation(this.attr('id'));
+                    });
+                });
+
+                // Add zoom and pan functionality
+                const viewport = draw.viewbox();
+                let viewbox = { x: viewport.x, y: viewport.y, width: viewport.width, height: viewport.height };
+                
+                document.getElementById('map-container').addEventListener('wheel', function(event) {
+                    event.preventDefault();
+                    const scale = event.deltaY < 0 ? 0.9 : 1.1;
+                    viewbox.width *= scale;
+                    viewbox.height *= scale;
+                    draw.viewbox(viewbox);
+                });
+
+                let isPanning = false;
+                let startPoint = { x: 0, y: 0 };
+
+                document.getElementById('map-container').addEventListener('mousedown', function(event) {
+                    isPanning = true;
+                    startPoint = { x: event.clientX, y: event.clientY };
+                });
+
+                document.getElementById('map-container').addEventListener('mousemove', function(event) {
+                    if (isPanning) {
+                        const dx = event.clientX - startPoint.x;
+                        const dy = event.clientY - startPoint.y;
+                        viewbox.x -= dx * viewbox.width / draw.width();
+                        viewbox.y -= dy * viewbox.height / draw.height();
+                        draw.viewbox(viewbox);
+                        startPoint = { x: event.clientX, y: event.clientY };
+                    }
+                });
+
+                document.getElementById('map-container').addEventListener('mouseup', function() {
+                    isPanning = false;
+                });
+
+                document.getElementById('map-container').addEventListener('mouseleave', function() {
+                    isPanning = false;
+                });
+            })
+            .catch(error => console.error('Error loading SVG:', error));
+
+        // Function to fetch legislation data (mock function for now)
+        function fetchLegislation(countryId) {
+            // In a real application, this would be an API call
+            const mockData = [
+                { title: "AI Ethics Act", type: "Ethics", status: "Enacted", dateEnacted: "2024-01-15" },
+                { title: "Data Privacy in AI Systems", type: "Privacy", status: "Proposed", dateEnacted: "N/A" },
+            ];
+
+            const legislationGrid = document.getElementById('legislation-grid');
+            legislationGrid.innerHTML = ''; // Clear existing content
+
+            mockData.forEach(leg => {
+                const card = document.createElement('div');
+                card.className = 'legislation-card';
+                card.innerHTML = `
+                    <h3>${leg.title}</h3>
+                    <p>Type: ${leg.type}</p>
+                    <p>Status: ${leg.status}</p>
+                    <p>Date Enacted: ${leg.dateEnacted}</p>
+                `;
+                legislationGrid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
