@@ -57,13 +57,14 @@
             position: relative;
             background-color: #f0f0f0;
             margin: 20px 0;
+            overflow: hidden;
         }
         #map-container {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
         }
         .country {
             fill: #ccc;
@@ -163,9 +164,12 @@
                 // Extract paths from the SVG
                 const paths = svgDoc.querySelectorAll('path');
                 
+                // Create a group to hold all countries
+                const worldGroup = draw.group();
+
                 paths.forEach(path => {
                     // Create a new path in our SVG.js drawing
-                    const country = draw.path(path.getAttribute('d'))
+                    const country = worldGroup.path(path.getAttribute('d'))
                         .addClass('country')
                         .attr('id', path.id);
 
@@ -182,60 +186,34 @@
                     });
                 });
 
-                // Add zoom and pan functionality
-                const viewport = draw.viewbox();
-                let viewbox = { x: viewport.x, y: viewport.y, width: viewport.width, height: viewport.height };
-                
-                function updateViewbox() {
-                    draw.viewbox(viewbox);
-                }
-
-                function handleZoom(event) {
-                    event.preventDefault();
-                    const scale = event.deltaY < 0 ? 0.9 : 1.1;
-                    const mouseX = event.clientX / draw.width() * viewbox.width + viewbox.x;
-                    const mouseY = event.clientY / draw.height() * viewbox.height + viewbox.y;
-                    viewbox.x = mouseX - (mouseX - viewbox.x) * scale;
-                    viewbox.y = mouseY - (mouseY - viewbox.y) * scale;
-                    viewbox.width *= scale;
-                    viewbox.height *= scale;
-                    updateViewbox();
-                }
-
-                let isPanning = false;
-                let startPoint = { x: 0, y: 0 };
-
-                function handlePanStart(event) {
-                    isPanning = true;
-                    startPoint = { x: event.clientX, y: event.clientY };
-                }
-
-                function handlePanMove(event) {
-                    if (isPanning) {
-                        const dx = event.clientX - startPoint.x;
-                        const dy = event.clientY - startPoint.y;
-                        viewbox.x -= dx * viewbox.width / draw.width();
-                        viewbox.y -= dy * viewbox.height / draw.height();
-                        updateViewbox();
-                        startPoint = { x: event.clientX, y: event.clientY };
-                    }
-                }
-
-                function handlePanEnd() {
-                    isPanning = false;
-                }
-
+                // Center and fit the map
+                const bbox = worldGroup.bbox();
                 const mapContainer = document.getElementById('map-container');
-                mapContainer.addEventListener('wheel', handleZoom);
-                mapContainer.addEventListener('mousedown', handlePanStart);
-                mapContainer.addEventListener('mousemove', handlePanMove);
-                mapContainer.addEventListener('mouseup', handlePanEnd);
-                mapContainer.addEventListener('mouseleave', handlePanEnd);
+                const containerWidth = mapContainer.clientWidth;
+                const containerHeight = mapContainer.clientHeight;
+                const scale = Math.min(containerWidth / bbox.width, containerHeight / bbox.height) * 0.95; // 0.95 to add a small margin
+                const translateX = (containerWidth - bbox.width * scale) / 2 - bbox.x * scale;
+                const translateY = (containerHeight - bbox.height * scale) / 2 - bbox.y * scale;
+
+                worldGroup.transform({
+                    translateX: translateX,
+                    translateY: translateY,
+                    scale: scale
+                });
 
                 // Handle window resize
                 window.addEventListener('resize', function() {
-                    draw.size('100%', '100%');
-                    updateViewbox();
+                    const newContainerWidth = mapContainer.clientWidth;
+                    const newContainerHeight = mapContainer.clientHeight;
+                    const newScale = Math.min(newContainerWidth / bbox.width, newContainerHeight / bbox.height) * 0.95;
+                    const newTranslateX = (newContainerWidth - bbox.width * newScale) / 2 - bbox.x * newScale;
+                    const newTranslateY = (newContainerHeight - bbox.height * newScale) / 2 - bbox.y * newScale;
+
+                    worldGroup.transform({
+                        translateX: newTranslateX,
+                        translateY: newTranslateY,
+                        scale: newScale
+                    });
                 });
             })
             .catch(error => console.error('Error loading SVG:', error));
