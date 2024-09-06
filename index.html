@@ -53,6 +53,11 @@
             width: 100%;
             max-width: 1000px;
             margin: 20px auto;
+            aspect-ratio: 2754.8 / 1399.8;
+        }
+        #map svg {
+            width: 100%;
+            height: 100%;
         }
         .country {
             fill: #ccc;
@@ -120,9 +125,12 @@
         <section id="map">
             <h2>Interactive World Map</h2>
             <div id="map">
-                <object type="image/svg+xml" data="worldmap.svg">
-                  Your browser does not support SVG
-                </object>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="-600 -300 4000 2000" preserveAspectRatio="xMidYMid meet">
+                    <g id="countries" transform="translate(0, 80) scale(1.1)">
+                        <path id="USA" d="M 549.5,273.1 L 549.9,271.4 L 551.4,271.3 L 551.6,269.9 L 552.5,269.6 L 552.9,267.6 L 556.1,265.3 L 558.2,265.3 L 560,266.5 L 562,266.5 L 563.6,268.8 L 565.4,269.5 L 566.2,271.4 L 567.4,271.4 L 567.4,272.9 L 566.2,275 L 567.6,276.9 L 567.9,278.8 L 570.4,278.5 L 570.8,280.1 L 571.8,280.1 L 573.2,281.6 L 573.1,283.3 L 573.7,284.6 L 577.1,285.3 L 576,287.2 L 576.5,288.3 L 577.8,288.3 L 579.3,290.2 L 578,292.8 L 578.5,293.6 L 577.5,296.2 L 577.5,297.8 L 574.7,300.6 L 572.3,300.6 L 570.8,299.1 L 570.5,297.2 L 568.7,294.2 L 567,292.8 L 565.3,291.8 L 565.1,290.4 L 563.6,288.7 L 563.4,286.6 L 561.5,284.8 L 559.5,284 L 557.9,282.2 L 556.8,280.1 L 554.6,279.2 L 552.1,277.2 L 551.6,275.7 L 551.6,274 Z" class="country" />
+                        <!-- Add more country paths here -->
+                    </g>
+                </svg>
             </div>
             <div id="info">Select a country to see AI legislation information.</div>
         </section>
