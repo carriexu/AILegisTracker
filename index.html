@@ -53,13 +53,6 @@
             width: 100%;
             max-width: 1000px;
             margin: 20px auto;
-            aspect-ratio: 2754.8 / 1399.8;
-            border: 1px solid #ccc;
-            position: relative;
-        }
-        #map svg {
-            width: 100%;
-            height: 100%;
         }
         .country {
             fill: #ccc;
@@ -127,7 +120,9 @@
         <section id="map">
             <h2>Interactive World Map</h2>
             <div id="map">
-                <!-- The SVG will be injected here by JavaScript -->
+                <object type="image/svg+xml" data="worldmap.svg">
+                  Your browser does not support SVG
+                </object>
             </div>
             <div id="info">Select a country to see AI legislation information.</div>
         </section>
@@ -146,39 +141,28 @@
     </main>
 
     <script>
-        // Load external SVG and inject it into the page
-        fetch('world-map.svg')
-            .then(response => response.text())
-            .then(svg => {
-                document.getElementById('map').innerHTML = svg;
-                // Initialize click event listeners after SVG is loaded
-                initializeCountryClickEvents();
-            })
-            .catch(error => console.error('Error loading SVG:', error));
-
-        // Function to initialize country click events
-        function initializeCountryClickEvents() {
-            document.querySelectorAll('.country').forEach(country => {
-                country.addEventListener('click', function() {
-                    // Remove 'selected' class from all countries
-                    document.querySelectorAll('.country').forEach(c => c.classList.remove('selected'));
-                    // Add 'selected' class to clicked country
-                    this.classList.add('selected');
-                    // Update info div
-                    document.getElementById('info').textContent = `Selected country: ${this.id}`;
-                    // Fetch legislation for the selected country
-                    fetchLegislation(this.id);
-                });
+        document.querySelectorAll('.country').forEach(country => {
+            country.addEventListener('click', function() {
+                // Remove 'selected' class from all countries
+                document.querySelectorAll('.country').forEach(c => c.classList.remove('selected'));
+                // Add 'selected' class to clicked country
+                this.classList.add('selected');
+                // Update info div
+                document.getElementById('info').textContent = `Selected country: ${this.id}`;
+                // Fetch legislation for the selected country
+                fetchLegislation(this.id);
             });
-        }
+        });
 
-        // Mock function to fetch legislation data
+        // Function to fetch legislation data (mock function for now)
         function fetchLegislation(countryId) {
+            // In a real application, this would be an API call
             const mockData = {
                 USA: [
                     { title: "AI Ethics Act", type: "Ethics", status: "Enacted", dateEnacted: "2024-01-15" },
                     { title: "Data Privacy in AI Systems", type: "Privacy", status: "Proposed", dateEnacted: "N/A" },
                 ],
+                // Add mock data for other countries as needed
             };
 
             const legislationGrid = document.getElementById('legislation-grid');
