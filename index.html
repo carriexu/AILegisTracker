@@ -52,9 +52,18 @@
         }
         #map {
             width: 100%;
-            height: 70vh;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            position: relative;
             background-color: #f0f0f0;
             margin: 20px 0;
+        }
+        #map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
         .country {
             fill: #ccc;
@@ -86,6 +95,15 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 20px;
         }
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            nav ul {
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -111,7 +129,9 @@
 
         <section id="map">
             <h2>Interactive World Map</h2>
-            <div id="map-container"></div>
+            <div id="map">
+                <div id="map-container"></div>
+            </div>
             <div id="info">Select a country to see AI legislation information.</div>
         </section>
 
@@ -166,39 +186,56 @@
                 const viewport = draw.viewbox();
                 let viewbox = { x: viewport.x, y: viewport.y, width: viewport.width, height: viewport.height };
                 
-                document.getElementById('map-container').addEventListener('wheel', function(event) {
+                function updateViewbox() {
+                    draw.viewbox(viewbox);
+                }
+
+                function handleZoom(event) {
                     event.preventDefault();
                     const scale = event.deltaY < 0 ? 0.9 : 1.1;
+                    const mouseX = event.clientX / draw.width() * viewbox.width + viewbox.x;
+                    const mouseY = event.clientY / draw.height() * viewbox.height + viewbox.y;
+                    viewbox.x = mouseX - (mouseX - viewbox.x) * scale;
+                    viewbox.y = mouseY - (mouseY - viewbox.y) * scale;
                     viewbox.width *= scale;
                     viewbox.height *= scale;
-                    draw.viewbox(viewbox);
-                });
+                    updateViewbox();
+                }
 
                 let isPanning = false;
                 let startPoint = { x: 0, y: 0 };
 
-                document.getElementById('map-container').addEventListener('mousedown', function(event) {
+                function handlePanStart(event) {
                     isPanning = true;
                     startPoint = { x: event.clientX, y: event.clientY };
-                });
+                }
 
-                document.getElementById('map-container').addEventListener('mousemove', function(event) {
+                function handlePanMove(event) {
                     if (isPanning) {
                         const dx = event.clientX - startPoint.x;
                         const dy = event.clientY - startPoint.y;
                         viewbox.x -= dx * viewbox.width / draw.width();
                         viewbox.y -= dy * viewbox.height / draw.height();
-                        draw.viewbox(viewbox);
+                        updateViewbox();
                         startPoint = { x: event.clientX, y: event.clientY };
                     }
-                });
+                }
 
-                document.getElementById('map-container').addEventListener('mouseup', function() {
+                function handlePanEnd() {
                     isPanning = false;
-                });
+                }
 
-                document.getElementById('map-container').addEventListener('mouseleave', function() {
-                    isPanning = false;
+                const mapContainer = document.getElementById('map-container');
+                mapContainer.addEventListener('wheel', handleZoom);
+                mapContainer.addEventListener('mousedown', handlePanStart);
+                mapContainer.addEventListener('mousemove', handlePanMove);
+                mapContainer.addEventListener('mouseup', handlePanEnd);
+                mapContainer.addEventListener('mouseleave', handlePanEnd);
+
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    draw.size('100%', '100%');
+                    updateViewbox();
                 });
             })
             .catch(error => console.error('Error loading SVG:', error));
